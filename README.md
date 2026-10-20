@@ -1,6 +1,6 @@
 # ThermalRadarSystem
 
-Thermal + radar weapon detection (Meyuhadim).
+Thermal + radar weapon detection .
 
 - **Radar** runs on pulse72 (DeviceDetection repo) and publishes on `/pcl_combined_layer`.
 - **Connect** from this machine:
