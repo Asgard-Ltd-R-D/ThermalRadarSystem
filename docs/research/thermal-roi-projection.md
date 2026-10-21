@@ -115,7 +115,7 @@ _Updated 2026-10-21 by [How do we get Suspect Regions out of DeviceDetection wit
 
 - _The Radar System emits nothing, so our own copy of its detection chain produces the Suspect Regions ([ADR-0003](../adr/0003-replicate-detection-chain.md))._
 - _The wire carries the fisheye box and `depth_m`, and fusion builds `outline_car_m` from them itself._
-- _`calib_id` is dropped, because fusion and the copy read the same calibration._
+- _`calib_id` moves from every frame to the stream's opening `source` line, as a hash of the calibration the copy loaded. Fusion refuses a stream whose hash doesn't match its own._
 - _The table below is the original research._
 
 These fields are per Suspect Region:

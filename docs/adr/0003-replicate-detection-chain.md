@@ -20,4 +20,6 @@ The Radar System computes Suspect Regions but publishes none: there is no topic,
   - So the RGB↔thermal latency difference is measured once at calibration and applied when fusion pairs a region with a thermal frame. The remaining jitter has to fit inside the 25 ms pairing budget.
   - The replica keeps their stamp-at-decode convention for radar pairing.
   - Only the radar↔camera pairing crosses hosts, and NTP covers that.
-- **The wire carries the fisheye box and `depth_m`.** Fusion back-projects the region itself, and there is no `calib_id`, because the replica and fusion read the same calibration copy.
+- **The wire carries the fisheye box and `depth_m`.** Fusion back-projects the region itself, so the replica and fusion must use the same calibration (`Hanwha.cam` and the RGB↔car entries of the YAML).
+  - That calibration is identified once per stream, not on every frame: the opening `source` line carries a hash of the calibration the replica loaded.
+  - Fusion refuses a stream whose hash differs from the calibration it loaded, so a restart after a calibration change can't silently shift the thermal region.
