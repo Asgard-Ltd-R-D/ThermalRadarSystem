@@ -35,10 +35,14 @@ Gathered over SSH without changing anything on pulse72. Paths are relative to `~
 - **The rig's sensors sit on a private wired network.**
   - The radars (10.20.30.40, .45, .46; `launch_config_sys1.yaml:111-114`) and the Hanwha (192.168.1.101; `:140`) share pulse72's one wired NIC, `enp134s0`, which holds 10.20.30.60/24 and 192.168.1.250/24.
   - That network has no gateway, and nothing on the office LAN can reach it.
-- **pulse72 reaches the office LAN over Wi-Fi** (`wlp132s0f0`, 192.168.1.152/24). `pulse72.local` resolves to that address.
-- **Both networks use 192.168.1.0/24.** pulse72 prefers the wired route (metric 100 vs 600).
-- **foxglove_bridge listens on all interfaces** (`0.0.0.0:8765`). The address to use depends on where you connect from:
-  - **From the office LAN:** use `ws://pulse72.local:8765` (Wi-Fi).
+- **pulse72 reaches the office LAN over Wi-Fi** (`wlp132s0f0`, 192.168.1.152/24). `pulse72.local` resolves to that address and to an IPv6 link-local address on the same interface.
+- **Both networks use 192.168.1.0/24, which breaks IPv4 from the office LAN.**
+  - pulse72 has no source-based routing (`ip rule` shows only the defaults) and prefers the wired /24 route (metric 100 vs 600).
+  - So its replies to any office host go out the wired NIC: `ip route get 192.168.1.55` gives `dev enp134s0 src 192.168.1.250`.
+  - From the dev Mac, a TCP connect to 192.168.1.152:22 fails. `ssh pulse72.local` works only because it goes over IPv6 link-local (`fe80::…%wlp132s0f0`).
+  - Fixing this would need source-based routing on pulse72, which is a change to their host.
+- **foxglove_bridge binds `0.0.0.0:8765`**, which is IPv4 only _(inferred: not checked while it was running)_.
+  - **From the office LAN:** unreachable as pulse72 is configured, because pulse72 routes its IPv4 replies out the wired NIC.
   - **From a host on the wired network:** use `ws://10.20.30.60:8765`. 10.20.30.0/24 doesn't overlap the office LAN, but `pulse72.local` (192.168.1.152) and 192.168.1.250 both sit in the shared 192.168.1.0/24, so a host on both networks would mis-route to them.
 - **The camera stream:** the node pulls `rtsp://192.168.1.101:554/1/media.smp` as H.264, with RTP interleaved over TCP and no credentials (`headless_3radars_cam.launch:273`; `hanwha_camera_node.py:162-173`).
   - **From a host on the wired network:** give its wired NIC a free 192.168.1.x address alongside its 10.20.30.x one, as pulse72 does with .250.
