@@ -6,4 +6,4 @@ The first brief had the radar find people and the thermal camera find anomalies.
 
 - Thermal can never raise an Alert for a region the Radar System missed.
 - Independent thermal detection with voting was rejected for v1: it needs its own person tracking and cross-sensor association.
-- The Radar System computes Suspect Regions but does not expose them: there is no detection topic or tracks file, and DeviceDetection must not be modified. Thermal Verification has no input until a Suspect Region interface exists; how to build one is open in #7.
+- The Radar System computes Suspect Regions but does not expose them: there is no detection topic or tracks file, and DeviceDetection must not be modified. Thermal Verification has no input until a Suspect Region interface exists. [ADR-0003](0003-replicate-detection-chain.md) builds one by running our own copy of the detection chain.

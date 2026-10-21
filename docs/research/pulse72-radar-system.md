@@ -27,7 +27,19 @@ Gathered over SSH without changing anything on pulse72. Paths are relative to `~
   - Intrinsics fx = fy = 930, cx 960, cy 540, k1–k4 fisheye.
   - Offset from the front radar is [−0.072, 0.1, 0] m (`CameraCalibrationFiles/Hanwha.cam`).
 - Frames: radar and "car" frames are x = right, y = forward, z = up, in metres; the car origin is the front radar antenna (`radar_overlay.py:344,1667`). Mounting height above the floor is undocumented.
+- **RGB↔car angles can change at runtime.** Keys `1/4 2/5 3/6` nudge `cam_alpha/beta/gamma` by ±1°. In the split path, `gpu_stage` rebuilds R and t every frame from the nudged values (`radar_overlay.py:2157,2735-2746`). The nudges are never saved: the `w` key writes only the radar install values (`:2934-2948`).
 - **No thermal camera exists**, and nothing in the repo mentions thermal.
+
+## Network (checked 2026-10-21)
+
+- **The rig's sensors sit on a private wired network.**
+  - The radars (10.20.30.40, .45, .46; `launch_config_sys1.yaml:111-114`) and the Hanwha (192.168.1.101; `:140`) share pulse72's one wired NIC, `enp134s0`, which holds 10.20.30.60/24 and 192.168.1.250/24.
+  - That network has no gateway, and nothing on the office LAN can reach it.
+- **pulse72 reaches the office LAN over Wi-Fi** (`wlp132s0f0`, 192.168.1.152/24). `pulse72.local` resolves to that address.
+- **Both networks use 192.168.1.0/24.** pulse72 prefers the wired route (metric 100 vs 600).
+- **The camera stream:** the node pulls `rtsp://192.168.1.101:554/1/media.smp` as H.264, with RTP interleaved over TCP and no credentials (`headless_3radars_cam.launch:273`; `hanwha_camera_node.py:162-173`).
+  - The SLA-T2480V is only a lens module. Hanwha lists it as a lens for the XNB-6001 body, which serves up to 20 unicast RTSP clients. That this rig's body is an XNB-6001 is _(inferred)_.
+- **Clock:** pulse72 keeps time with chrony, NTP-synchronized.
 
 ## Pipeline
 
@@ -70,6 +82,10 @@ Gathered over SSH without changing anything on pulse72. Paths are relative to `~
 
 - **No detection topic or message exists.** Detections live only inside `cpu_stage.py`.
   - `TrackLogger` CSV (`realtime/track_logger.py`) is created only in the serial path (`radar_overlay.py:3742`), so the split launcher writes no tracks file.
+  - **No log carries detections either.**
+    - `cpu_stage` writes no log; its stdout goes to the `docker exec -it` terminal (`start_split.sh:104-118`).
+    - The `gpu_stage` logs hold only sync, model-load and frame-drop lines.
+    - `--weapon-debug` prints per-Person `median_y` and counts, but no boxes, probabilities or IDs (`weapon_detector.py:773,1205,1293`).
 - `/pcl_combined_layer` is an unused config entry left over from the Arbe GUI. Nothing publishes it.
 - The ROS graph exists only while the GUI runs; quitting kills roslaunch (`gpu_stage.py:286-288`).
 - `headless_start.sh:145` sets `ROS_HOSTNAME=localhost`, so remote rospy subscribers will likely fail _(inferred)_.
@@ -80,7 +96,7 @@ Gathered over SSH without changing anything on pulse72. Paths are relative to `~
 - **Radar:**
   - `RosHeader.stamp` is set from host `ros::Time::now()` at publish (`pointcloud_node.cpp:2363`).
   - `PcHeader.time` is radar hardware capture time in Unix ms, and is what the app buffers on (`radar_overlay.py:1531`).
-- **Camera:** the stamp is host time from the RTCP sender report plus the RTP delta (`hanwha_camera_node.py:80-120,282`).
+- **Camera:** the stamp is pulse72's `rospy.Time.now()` at the moment the decoded frame is pulled, so it includes the network and decode delay (`hanwha_camera_node.py:262-274,282`). An RTCP mapper exists (`:86-108`) but is never called. _(Corrected 2026-10-21: this line used to say "RTCP sender report plus RTP delta".)_
 - **Detections:** a detection frame carries the camera stamp (`radar_overlay.py:1582`).
 - **Rates:**
   - Radar runs at about 20 Hz × 3 and the camera at about 20 fps.

@@ -111,6 +111,13 @@ _Updated 2026-10-21 for the 24° AS24 lens chosen in [Which thermal camera does 
 
 ## Fields the Radar System's output must carry (feeds #7, #9)
 
+_Updated 2026-10-21 by [How do we get Suspect Regions out of DeviceDetection without modifying it?](https://github.com/Asgard-Ltd-R-D/ThermalRadarSystem/issues/7):_
+
+- _The Radar System emits nothing, so our own copy of its detection chain produces the Suspect Regions ([ADR-0003](../adr/0003-replicate-detection-chain.md))._
+- _The wire carries the fisheye box and `depth_m`, and fusion builds `outline_car_m` from them itself._
+- _`calib_id` is dropped, because fusion and the copy read the same calibration._
+- _The table below is the original research._
+
 These fields are per Suspect Region:
 
 | Field | Status | Notes |

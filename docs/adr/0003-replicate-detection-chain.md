@@ -1,0 +1,19 @@
+# We run our own copy of the Radar System's detection chain
+
+The Radar System computes Suspect Regions but publishes none: there is no topic, log or file (`docs/research/pulse72-radar-system.md`). We may not modify DeviceDetection, and for now we can't ask the radar team for anything. So we run a read-only copy of its detection chain (code, models and config), the **replica**, as its own process on our host. That host joins the rig's wired sensor network. It takes the camera straight from the Hanwha over RTSP and the radar from the existing foxglove_bridge, and it writes one JSON line per processed frame to fusion. Replayed over a recorded bag, the same replica produces the walking skeleton's Suspect Regions.
+
+## Considered options
+
+- **The radar team publishes a topic.** This is the cleanest option, but asking is off the table for now. If that changes, their topic replaces the replica, and the payload can stay the same.
+- **A hook that launches their unchanged `cpu_stage` under our wrapper.** Its output would match theirs exactly. But their rig would then start through our launcher, and the hook patches their private functions.
+- **The replica on pulse72, beside their container.** This needs no new cable. But our process would live permanently on their rig, competing with a CPU stage that already drops frames. Thermal-to-region pairing would also cross hosts.
+- **A replay-only v1.** This leaves the spec with no live source.
+
+## Consequences
+
+- **Compute runs twice.** Our host needs a GPU for YOLO pose and segmentation at 20 fps.
+- **Our Person and region track IDs differ** from the ones on the Radar System's red boxes. Its alarm and our Alerts can disagree.
+- **Our copy goes stale** when the radar team changes code, models or config. Each JSON Lines stream opens with a `source` line that records which copy produced it.
+- **Live angle nudges in their GUI never reach our copy.** They are never saved to the YAML either.
+- **One host clock stamps both the RGB and the thermal frames.** Only the radar↔camera pairing crosses hosts, and NTP covers that.
+- **The wire carries the fisheye box and `depth_m`.** Fusion back-projects the region itself, and there is no `calib_id`, because the replica and fusion read the same calibration copy.
