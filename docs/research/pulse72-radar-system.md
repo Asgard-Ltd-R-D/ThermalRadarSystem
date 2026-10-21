@@ -41,6 +41,9 @@ Gathered over SSH without changing anything on pulse72. Paths are relative to `~
   - **From the office LAN:** use `ws://pulse72.local:8765` (Wi-Fi).
   - **From a host on the wired network:** use `ws://10.20.30.60:8765`. 10.20.30.0/24 doesn't overlap the office LAN, but `pulse72.local` (192.168.1.152) and 192.168.1.250 both sit in the shared 192.168.1.0/24, so a host on both networks would mis-route to them.
 - **The camera stream:** the node pulls `rtsp://192.168.1.101:554/1/media.smp` as H.264, with RTP interleaved over TCP and no credentials (`headless_3radars_cam.launch:273`; `hanwha_camera_node.py:162-173`).
+  - **From a host on both networks:** route the camera through the wired interface explicitly, e.g. `ip route add 192.168.1.101/32 dev <wired-if> src <wired-addr>`.
+    - Longest-prefix match makes that /32 win over both 192.168.1.0/24 routes.
+    - Without it, RTSP can leave over office Wi-Fi and fail, or reach an unrelated host.
   - The SLA-T2480V is only a lens module. Hanwha lists it as a lens for the XNB-6001 body, which serves up to 20 unicast RTSP clients. That this rig's body is an XNB-6001 is _(inferred)_.
 - **Clock:** pulse72 keeps time with chrony, NTP-synchronized.
 
