@@ -6,6 +6,12 @@ Background: [pulse72 investigation](pulse72-radar-system.md). Paths written as `
 
 ## Answer
 
+_Updated 2026-10-21:_
+
+- _The bridge is unreachable from the office LAN over IPv4, because pulse72 routes its replies out its wired NIC._
+- _Connect from a host on the rig's wired network at `ws://10.20.30.60:8765`. See "Network" in [the pulse72 investigation](pulse72-radar-system.md)._
+- _The `pulse72` / `pulse72.local` addresses below predate this finding._
+
 **Use the `foxglove_bridge` that already runs on `ws://pulse72:8765`, with the Python packages `websockets` and `rosbags`.** This needs no changes on pulse72, and the same code runs on Linux and macOS. The bridge sends raw ROS1 bytes and puts the full message definition in its `advertise` message, so no `arbe_msgs` package is needed on the client.
 
 **Native rospy cannot work off-host without changing how the Radar System is launched.** Because `ROS_HOSTNAME=localhost`, every socket binds to loopback only, the master included.
