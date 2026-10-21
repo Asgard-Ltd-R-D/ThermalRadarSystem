@@ -6,7 +6,7 @@ Answers [#4](https://github.com/Asgard-Ltd-R-D/ThermalRadarSystem/issues/4). Cod
 
 **For v1, use (a): project the Suspect Region in 3D through the thermal intrinsics and a thermal-to-car extrinsic.** The 3D region should be the region's RGB window back-projected to the depth of its radar points. It should not be the raw radar points.
 
-- Get thermal-to-car by chaining two transforms: one board calibration of thermal↔RGB, plus the Radar System's existing RGB↔car transform. The RGB↔car error then cancels out, because the corners were built through the same transform.
+- Get thermal-to-car by chaining two transforms: one board calibration of thermal↔RGB, plus the Radar System's existing RGB↔car transform. The region was built through the same RGB↔car transform, so that transform's error does not shift the region sideways. It only moves the region along its RGB rays, which adds a small depth error.
 - The expected error is about 10–15% of the region's width at 0.5–3 m. A plain homography (b) is off by 57 px at 10 cm baseline, which is 1.5× the region's width at 3 m.
 - Person-level matching (c) fails at close range: at 0.5 m a 25–50° lens sees only 0.22–0.47 m of the Person.
 
@@ -47,6 +47,7 @@ Error sensitivities at f = 686 px. These follow from pinhole two-view geometry, 
 | Depth error δZ = 10 cm when back-projecting, B = 10 cm | f·B·δZ/Z² | 27 | 6.9 | 0.8 |
 | Extrinsic rotation error, per 0.1° | f·δθ | 1.2 | 1.2 | 1.2 |
 | Extrinsic translation error, per 1 cm | f·δt/Z | 14 | 6.9 | 2.3 |
+| RGB↔car rotation error, per 1°, region φ = 30° off-axis, B = 10 cm | f·B·tan φ·δθ/Z | 1.4 | 0.7 | 0.2 |
 | Time skew, per 10 ms at 1 m/s lateral | f·v·Δt/Z | 14 | 6.9 | 2.3 |
 
 ## The three options
@@ -54,15 +55,19 @@ Error sensitivities at f = 686 px. These follow from pinhole two-view geometry, 
 ### (a) Project 3D through thermal intrinsics and thermal-to-car extrinsics (recommended)
 
 - **Inputs from the Radar System:** the region in 3D in the car frame and the frame timestamp.
-  - Use the window's four corners, back-projected to the median car `y` of the window's points: `cv2.fisheye.undistortPoints` gives a ray, which is scaled to that depth and moved to the car frame.
+  - Use points sampled along the window's four edges (about 8 per edge, corners included), back-projected to the median car `y` of the window's points: `cv2.fisheye.undistortPoints` gives a ray, which is scaled to that depth and moved to the car frame.
+  - Four corners are not enough. The window is a rectangle in fisheye pixels, so its edges curve once back-projected. With the Hanwha intrinsics, a 0.165 m region bows up to 12 mm at 0.5 m, outward on some edges when off-axis. That is up to 16 thermal px, or 7% of the width.
   - Do not use the raw points. Their hull is sparse (≥ 15 points), and it inherits the radar↔RGB misregistration: the label lives in the window, not in the points.
-- **Projection:** call `cv2.projectPoints(corners_car, rvec_th, t_th, K_th, D_th)` and take the bounding rectangle, clipped to the image ([CV] L855).
+- **Projection:** call `cv2.projectPoints(outline_car, rvec_th, t_th, K_th, D_th)` and take the bounding rectangle, clipped to the image ([CV] L855). The thermal lens bends edges too, so project the whole outline, not just the corners.
 - **Error, two ways to get thermal-to-car:**
-  - **Chain through RGB (recommended):** T_th←car = T_th←RGB · T_RGB←car. The corners were built through the same T_RGB←car, so its error cancels and only these terms are left:
-    - the depth term, f·B·δZ/Z²;
+  - **Chain through RGB (recommended):** T_th←car = T_th←RGB · T_RGB←car. The outline was built as T_car←RGB · (s · RGB ray), so projecting it gives T_th←RGB · (s · RGB ray). The T_RGB←car error cannot move the region off its RGB rays. It only biases the scale s, because s is chosen to hit the car-frame depth `depth_m`:
+    - A rotation error δθ moves a ray φ off-axis by about Z·tan φ·δθ in depth. The radar↔RGB rotation is uncalibrated, so this term is real.
+    - A forward translation error δt moves it by δt.
+  - The terms left are:
+    - the depth term, f·B·δZ/Z², where δZ now includes the RGB↔car share above;
     - the thermal↔RGB calibration error;
     - time skew.
-    - Example _(assumption: 0.2°, 5 mm, δZ 10 cm, 10 ms)_, combined as a root-sum-square: about 31 px at 0.5 m (14% of the width) and 3.6 px at 3 m (9%).
+  - Example _(assumption: 0.2°, 5 mm, δZ 10 cm, 10 ms, plus RGB↔car off by 3° on a region 30° off-axis)_, combined as a root-sum-square: about 32 px at 0.5 m (14% of the width) and 3.7 px at 3 m (10%). The RGB↔car share is 4.1 px and 0.7 px of that.
   - **Calibrate radar↔thermal directly:** Domhof et al. report a median camera-to-radar RMSE of about 2.5 cm with ≥ 10 board positions, using a trihedral reflector behind Styrofoam on a radar without elevation [DOM]. That is 34 px at 0.5 m and 5.7 px at 3 m, about 15% at both ends. It is worse at close range and takes more effort, so defer it.
 - **Calibration:** thermal intrinsics, plus one thermal↔RGB board session (procedure below).
 
@@ -110,9 +115,9 @@ These fields are per Suspect Region:
 |---|---|---|
 | `stamp` | exists per frame | Camera frame time on the host clock (`radar_overlay.py:1582`). The Thermal Verifier picks the nearest thermal frame; each 10 ms of skew costs 14 px at 0.5 m. |
 | `person_track_id`, `region_track_id` | exist (`track_id`, `weapon_track_id`) | |
-| `corners_car_m` | **new** | 4 × (x, y, z) in metres in the car frame: the window corners back-projected to `depth_m`. |
+| `outline_car_m` | **new** | N × (x, y, z) in metres in the car frame: points sampled along the window's edges (about 8 per edge), back-projected to `depth_m`. |
 | `depth_m` | **new** | Median car `y` of the window's radar points. The value is already computable from the projected DataFrame. |
-| `calib_id` | **new** | Identifies the RGB↔car calibration (`.cam` file plus Euler angles) the corners were built with. The thermal extrinsic is composed from it and is valid only with it. |
+| `calib_id` | **new** | Identifies the RGB↔car calibration (`.cam` file plus Euler angles) the outline was built with. The thermal extrinsic is composed from it and is valid only with it. |
 | `cx, cy, w, h` | exists | Fisheye pixels, for display only. |
 
 The Thermal Verifier also needs a "not visible" outcome. At 0.5 m a 25° lens sees 0.22×0.18 m, which is smaller than the 0.165×0.275 m region, and at 3 m a 320-wide 50° camera puts the region in only 19×31 px.
