@@ -1,6 +1,6 @@
 # We run our own copy of the Radar System's detection chain
 
-The Radar System computes Suspect Regions but publishes none: there is no topic, log or file (`docs/research/pulse72-radar-system.md`). We may not modify DeviceDetection, and for now we can't ask the radar team for anything. So we run a read-only copy of its detection chain (code, models and config), the **replica**, as its own process on our host. That host joins the rig's wired sensor network. It takes the camera straight from the Hanwha over RTSP and the radar from the existing foxglove_bridge, and it writes one JSON line per processed frame to fusion. Replayed over a recorded bag, the same replica produces the walking skeleton's Suspect Regions.
+The Radar System computes Suspect Regions but publishes none: there is no topic, log or file (`docs/research/pulse72-radar-system.md`). We may not modify DeviceDetection, and for now we can't ask the radar team for anything. So we run a read-only copy of its detection chain (code, models and config), the **replica**, as its own process on our host. That host joins the rig's wired sensor network. It takes the camera straight from the Hanwha over RTSP and the radar from the existing foxglove_bridge at pulse72's wired address (`ws://10.20.30.60:8765`), and it writes one JSON line per processed frame to fusion. Replayed over a recorded bag, the same replica produces the walking skeleton's Suspect Regions.
 
 ## Considered options
 
@@ -15,5 +15,9 @@ The Radar System computes Suspect Regions but publishes none: there is no topic,
 - **Our Person and region track IDs differ** from the ones on the Radar System's red boxes. Its alarm and our Alerts can disagree.
 - **Our copy goes stale** when the radar team changes code, models or config. Each JSON Lines stream opens with a `source` line that records which copy produced it.
 - **Live angle nudges in their GUI never reach our copy.** They are never saved to the YAML either.
-- **One host clock stamps both the RGB and the thermal frames.** Only the radar↔camera pairing crosses hosts, and NTP covers that.
+- **One host clock stamps both the RGB and the thermal frames, but neither stamp is the capture time.**
+  - The RGB stamp is taken after the camera's encode, RTSP transport and decode, and the thermal stamp after USB acquisition. A shared clock removes clock offset, not these pipeline delays.
+  - So the RGB↔thermal latency difference is measured once at calibration and applied when fusion pairs a region with a thermal frame. The remaining jitter has to fit inside the 25 ms pairing budget.
+  - The replica keeps their stamp-at-decode convention for radar pairing.
+  - Only the radar↔camera pairing crosses hosts, and NTP covers that.
 - **The wire carries the fisheye box and `depth_m`.** Fusion back-projects the region itself, and there is no `calib_id`, because the replica and fusion read the same calibration copy.

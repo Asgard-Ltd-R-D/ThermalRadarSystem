@@ -37,6 +37,9 @@ Gathered over SSH without changing anything on pulse72. Paths are relative to `~
   - That network has no gateway, and nothing on the office LAN can reach it.
 - **pulse72 reaches the office LAN over Wi-Fi** (`wlp132s0f0`, 192.168.1.152/24). `pulse72.local` resolves to that address.
 - **Both networks use 192.168.1.0/24.** pulse72 prefers the wired route (metric 100 vs 600).
+- **foxglove_bridge listens on all interfaces** (`0.0.0.0:8765`). The address to use depends on where you connect from:
+  - **From the office LAN:** use `ws://pulse72.local:8765` (Wi-Fi).
+  - **From a host on the wired network:** use `ws://10.20.30.60:8765`. 10.20.30.0/24 doesn't overlap the office LAN, but `pulse72.local` (192.168.1.152) and 192.168.1.250 both sit in the shared 192.168.1.0/24, so a host on both networks would mis-route to them.
 - **The camera stream:** the node pulls `rtsp://192.168.1.101:554/1/media.smp` as H.264, with RTP interleaved over TCP and no credentials (`headless_3radars_cam.launch:273`; `hanwha_camera_node.py:162-173`).
   - The SLA-T2480V is only a lens module. Hanwha lists it as a lens for the XNB-6001 body, which serves up to 20 unicast RTSP clients. That this rig's body is an XNB-6001 is _(inferred)_.
 - **Clock:** pulse72 keeps time with chrony, NTP-synchronized.
