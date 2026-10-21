@@ -4,24 +4,56 @@ Supports [Which thermal camera does v1 target?](https://github.com/Asgard-Ltd-R-
 
 ## What v1 orders
 
-- **Camera:** Boson+ 640, shuttered (part numbers starting 22640), Industrial grade, radiometric, with the **A024** lens.
-  - The **A032** lens may replace it, depending on stock: 14 mm, 32.0° × 25.6°, f/1.00, f ≈ 1167 px _(derived)_, radiometric-capable [DS117 Table 11; KB-OPT].
+- **Camera:** **22640AS24-6IARX**: Boson+ 640, 24° compact lens, shuttered, Industrial grade, radiometric [MF].
+  - The **22640AS32-6IARX** (32° compact lens, radiometric) may replace it, depending on stock [MF].
 - **Interface:** the FLIR **USB VPC kit 421-0061-00**.
 - **Confirm in writing on the quote:**
-  - the exact radiometric A024 part number;
+  - that the part number delivered is radiometric (see [Radiometry](#radiometry));
   - the ECCN and any export licence (see [Frame rate](#frame-rate-and-export-class)).
 
 ## Sensor and lens
 
 - 640×512, 12 µm pitch. Industrial NETD is ≤ 20 mK, Professional ≤ 30 mK (lensless, f/1.0) [DS117 Table 1, 13].
-- **A024:** 18 mm focal length, 24.3° × 19.5° FOV, f/1.04 [DS117 Table 11].
-  - f ≈ 1500 px _(derived: 18 mm / 12 µm)_. Then 2·atan(320/1500) = 24.1°, which matches the stated FOV, so distortion is low.
-  - FLIR's optics KB lists A024 as radiometric-capable for 640 [KB-OPT].
-- **The 50° AS50 lens, considered and not chosen:** 9.2 mm, 49.9° × 39.3°, distortion < 18%.
-  - Its radiometric support is contradicted: the product page lists an AS50 radiometric model, but the KB doesn't [KB-OPT].
-- Radiometry is a separate factory SKU ("R" in the part number). A fielded camera can't be upgraded [DS117 §6.2, §6.15].
-  - T-Linear output is Kelvin × 100 in high gain, so 20 °C reads 29315.
-  - Accuracy is ±5 °C [DS117 §11.5].
+- **Lens options:**
+
+| Lens | Focal length | FOV (H × V) | f/# | Distortion | f in px _(derived)_ | Radiometric SKU [MF] |
+|---|---|---|---|---|---|---|
+| **AS24 (chosen)** | 18 mm | 24.3° × 19.2° | 1.09 | < 2% | 1500 | 22640AS24-6IARX |
+| AS32 (possible swap) | 13.6 mm | 32.0° × 25.6° | 1.01 | < 3% | 1133 | 22640AS32-6IARX |
+| AS50 (research pick) | 9.2 mm | 49.9° × 39.3° | 1.01 | < 18% | 767 | 22640AS50-6IARX |
+
+  Sources: [KB-OPT], [DS117 Table 11].
+- For the AS24, 2·atan(320/1500) = 24.1°, which matches the stated 24.3°. A pinhole model is a fair nominal.
+- The full-size A024 (18 mm) and A032 (14 mm) share these fields of view, but the model finder lists them as **non-radiometric**.
+
+## Radiometry
+
+- **Radiometry is a separate factory SKU,** marked by "R" in the part number. A fielded camera can't be upgraded [DS117 §6.2, §6.15].
+- **FLIR's two lists disagree on which lenses come radiometric:**
+  - The **model finder** sells radiometric 640s only as `-6IARX` parts with the AS24, AS32, AS50 and AS95 compact lenses, plus the A018. It lists the A024 and A032 as non-radiometric [MF].
+  - The **optics KB** asterisks only A024 and A032 as "available radiometry capable", and not the AS lenses [KB-OPT].
+- **Order the catalogued `-6IARX` part, and confirm on the quote that it is radiometric.**
+- **Output:** T-Linear values are Kelvin × 100 in high gain, so 20 °C reads 29315.
+- **Accuracy:** ±5 °C [DS117 §11.5].
+
+## Focus
+
+- **As delivered, the lens is focused far away, and the verification zone is out of focus.** The good-focus limits from FLIR's Note 3 [KB-OPT]:
+
+| Lens | Closest sharp distance, new camera | Closest sharp distance, after refocusing |
+|---|---|---|
+| AS24 | 33 m | 1.0 m |
+| AS32 | 20 m | 0.5 m |
+| AS50 | 7.5 m | 0.3 m |
+
+- **Refocus to about 2 m before calibration or any capture,** then lock the focus.
+  - Refocusing changes the intrinsics, so the camera must be recalibrated after any focus change.
+  - FLIR requires a focus tool for focal lengths under 18 mm, which includes the AS32 and AS50. The AS24 is at exactly 18.0 mm.
+- **Depth of field across 1.5–3 m, with focus at 2 m** _(derived; thin-lens model)_:
+  - The AS24 blurs by about 50 µm (≈ 4 px) at 1.5 m and at 3 m.
+  - The AS32 blurs by about 31 µm (≈ 2.5 px).
+  - The AS50 blurs by about 14 µm (≈ 1 px).
+  - For comparison, LWIR diffraction alone is about 2 px at f/1.
 
 ## Frame rate and export class
 
@@ -43,6 +75,8 @@ Supports [Which thermal camera does v1 target?](https://github.com/Asgard-Ltd-R-
 - The control channel is a serial port, `/dev/ttyACM0` at 921600 baud [rawBoson].
 - **The VPC kit is USB2 only** [DS117 §15.1]. Y16 at 30 Hz is about 19.7 MB/s, which fits. At 60 Hz it is about 39.5 MB/s, which FLIR never confirms works over USB2 _(derived)_.
 - **Check on arrival:**
+  - the part number is the radiometric one;
+  - refocus to about 2 m (see [Focus](#focus));
   - `v4l2-ctl --list-formats-ext`;
   - `lsusb -v` for the endpoint type;
   - the telemetry frame counter, for drops.
@@ -75,17 +109,18 @@ Supports [Which thermal camera does v1 target?](https://github.com/Asgard-Ltd-R-
 
 ## Not verified from a FLIR source
 
+- which of FLIR's two radiometry lists is right;
 - whether 60 Hz Y16 works over USB2;
 - the exact Boson+ FFC freeze time;
 - the telemetry timestamp's epoch;
 - the ECCN;
-- the radiometric A024 part number;
 - the Rev410 licence text.
 
 ## Sources
 
-- [DS117]: Boson+ Product Datasheet 102-2013-45 Rel. 117, 16 Sep 2026. <https://flir.netx.net/file/asset/55485/original/attachment/>, linked from <https://oem.flir.com/products/boson-plus?vertical=lwir&segment=oem>
-- [KB-OPT]: Boson+ optical specs. <https://oem.flir.com/support/support-center/knowledge-base/boson-plus-optical-specs/>
+- [DS117]: Boson+ Product Datasheet 102-2013-45 Rel. 117, 16 Sep 2026. <https://flir.netx.net/file/asset/55485/original/attachment/>
+- [MF]: Boson+ model finder (product page). <https://oem.flir.com/products/boson-plus/?vertical=lwir&segment=oem>
+- [KB-OPT]: Boson+ optical specs, Notes 1 and 3. <https://oem.flir.com/support/support-center/knowledge-base/boson-plus-optical-specs/>
 - [KB-UVC]: <https://oem.flir.com/support/support-center/knowledge-base/what-is-the-serial-command-to-select-a-uvc-video-stream-format-ir16-or-colorized/>
 - [BosonUSB]: <https://github.com/FLIR/BosonUSB>
 - [rawBoson]: <https://github.com/FLIR/rawBoson>
