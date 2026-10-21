@@ -89,21 +89,23 @@ Error sensitivities at f = 686 px. These follow from pinhole two-view geometry, 
 
 ## v1 calibration procedure and effort
 
+_Updated 2026-10-21 for the 24° AS24 lens chosen in [Which thermal camera does v1 target?](https://github.com/Asgard-Ltd-R-D/ThermalRadarSystem/issues/5). With focus locked at about 2 m, keep every capture within 1.5–3 m. The lens can't focus closer than 1.0 m, and a target at 0.5 m would blur by about 37 px ([Boson+ 640 facts](boson-plus-640.md#focus))._
+
 1. **Board.** Use one board visible in both RGB and LWIR without heating.
    - PST900 uses sand-blasted aluminium squares on black acrylic. The aluminium reflects the operator's heat, and the same corners are detected in both modalities [PST §III-A].
    - A high-emissivity UV print on polished stainless steel (ε 0.24 vs 0.93) reached a mean reprojection error of 0.057 px on a 640×480 LWIR camera [ELS].
    - Heated paper is the fallback: 0.41–1.27 px in the literature, and it cools "in a few minutes" ([ELS] Table 1). A hole mask over a heat source cut reprojection error by up to 78% compared with a heated chessboard [VID].
    - I found no first-party vendor application note on thermal geometric calibration.
-2. **Thermal intrinsics.** Take 20–40 views spread across the frame. Detect corners with `cv2.findChessboardCornersSB` [CV L1336]. PST900 found OpenCV's detector poor on thermal images and used libcbdetect.
+2. **Thermal intrinsics.** Take 20–40 views spread across the frame, with the board at 1.5–3 m. Detect corners with `cv2.findChessboardCornersSB` [CV L1336]. PST900 found OpenCV's detector poor on thermal images and used libcbdetect.
    - Then run `cv2.calibrateCamera` with the pinhole and radial-tangential model for a 25–50° lens. PST900 used the fisheye model for its wide 2.3 mm Boson lens.
    - _Effort: about half a day once the board exists (estimate)._
-3. **Thermal↔RGB extrinsics.** Take about 15 simultaneous captures with the board at 0.5–3 m. OpenCV cannot calibrate a fisheye+pinhole pair directly:
+3. **Thermal↔RGB extrinsics.** Take about 15 simultaneous captures with the board at 1.5–3 m. OpenCV cannot calibrate a fisheye+pinhole pair directly:
    - `fisheye::stereoCalibrate` takes 4-term fisheye distortion for both cameras [CV L4010-4060].
    - 5.x `calibrateMultiview` "does not support mix of different camera models" [CV5 L1054].
    - So undistort the RGB corners first, as `radar_overlay.py:1141-1168` already does. Then run `cv2.stereoCalibrate` with zero RGB distortion and `CALIB_FIX_INTRINSIC`, which OpenCV recommends when the intrinsics are known [CV L1850-1856]. It returns R, T from RGB to thermal [CV L1753-1759].
    - _Effort: about half a day (estimate)._
 4. **Compose.** Compute T_th←car = [R|T] · `build_extrinsic(t_in_car, euler)`, and store it with the RGB↔car calibration it was built from.
-5. **Check.** Place a warm object at 0.5, 1.5 and 3 m and compare its projected box with its thermal blob. The click-pair format in `legacy/radar/calibration_utils.py:927` can log these pairs.
+5. **Check.** Place a warm object at 1.5, 2.25 and 3 m and compare its projected box with its thermal blob. The click-pair format in `legacy/radar/calibration_utils.py:927` can log these pairs.
 
 **Libraries:** OpenCV 4.11 and numpy, both already in the container [P72]. No new dependency is needed.
 

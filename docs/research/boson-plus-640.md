@@ -49,6 +49,7 @@ Supports [Which thermal camera does v1 target?](https://github.com/Asgard-Ltd-R-
 - **Refocus to about 2 m before calibration or any capture,** then lock the focus.
   - Refocusing changes the intrinsics, so the camera must be recalibrated after any focus change.
   - FLIR requires a focus tool for focal lengths under 18 mm, which includes the AS32 and AS50. The AS24 is at exactly 18.0 mm.
+- **Keep every calibration and check capture within 1.5–3 m.** With the AS24 focused at 2 m, a target at 1.0 m blurs by about 12 px and one at 0.5 m by about 37 px _(derived)_. The lens can't focus closer than 1.0 m anyway.
 - **Depth of field across 1.5–3 m, with focus at 2 m** _(derived; thin-lens model)_:
   - The AS24 blurs by about 50 µm (≈ 4 px) at 1.5 m and at 3 m.
   - The AS32 blurs by about 31 µm (≈ 2.5 px).
