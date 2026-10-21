@@ -41,7 +41,10 @@ Gathered over SSH without changing anything on pulse72. Paths are relative to `~
   - **From the office LAN:** use `ws://pulse72.local:8765` (Wi-Fi).
   - **From a host on the wired network:** use `ws://10.20.30.60:8765`. 10.20.30.0/24 doesn't overlap the office LAN, but `pulse72.local` (192.168.1.152) and 192.168.1.250 both sit in the shared 192.168.1.0/24, so a host on both networks would mis-route to them.
 - **The camera stream:** the node pulls `rtsp://192.168.1.101:554/1/media.smp` as H.264, with RTP interleaved over TCP and no credentials (`headless_3radars_cam.launch:273`; `hanwha_camera_node.py:162-173`).
-  - **From a host on both networks:** route the camera through the wired interface explicitly, e.g. `ip route add 192.168.1.101/32 dev <wired-if> src <wired-addr>`.
+  - **From a host on the wired network:** give its wired NIC a free 192.168.1.x address alongside its 10.20.30.x one, as pulse72 does with .250.
+    - The camera has no gateway, so it can only reply to an address in its own subnet.
+    - Check that the address is free first, for example with `arping`.
+  - **If that host is also on the office LAN:** route the camera through the wired interface explicitly, e.g. `ip route add 192.168.1.101/32 dev <wired-if> src <wired-192.168.1.x>`.
     - Longest-prefix match makes that /32 win over both 192.168.1.0/24 routes.
     - Without it, RTSP can leave over office Wi-Fi and fail, or reach an unrelated host.
   - The SLA-T2480V is only a lens module. Hanwha lists it as a lens for the XNB-6001 body, which serves up to 20 unicast RTSP clients. That this rig's body is an XNB-6001 is _(inferred)_.
@@ -103,6 +106,9 @@ Gathered over SSH without changing anything on pulse72. Paths are relative to `~
   - `RosHeader.stamp` is set from host `ros::Time::now()` at publish (`pointcloud_node.cpp:2363`).
   - `PcHeader.time` is radar hardware capture time in Unix ms, and is what the app buffers on (`radar_overlay.py:1531`).
 - **Camera:** the stamp is pulse72's `rospy.Time.now()` at the moment the decoded frame is pulled, so it includes the network and decode delay (`hanwha_camera_node.py:262-274,282`). An RTCP mapper exists (`:86-108`) but is never called. _(Corrected 2026-10-21: this line used to say "RTCP sender report plus RTP delta".)_
+- **Radar↔camera pairing:** each camera frame gets the radar snapshot nearest `cam_stamp − cam_delay` (`radar_overlay.py:1406-1408,1560`).
+  - `--cam-delay` ("camera RTSP latency") defaults to 0 (`:3535`), and the split launcher doesn't pass it.
+  - The `,` and `.` keys nudge it live by 50 ms (`:2753-2758`). It is never saved.
 - **Detections:** a detection frame carries the camera stamp (`radar_overlay.py:1582`).
 - **Rates:**
   - Radar runs at about 20 Hz × 3 and the camera at about 20 fps.
