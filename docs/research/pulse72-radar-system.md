@@ -44,7 +44,10 @@ Gathered over SSH without changing anything on pulse72. Paths are relative to `~
    - Hands frames to `cpu_stage` over `/dev/shm` and a UNIX socket (`gpu_stage.py:245-259`).
 3. `cpu_stage.py` (no ROS) runs `WeaponDetectorEngine.detect` (`radar_overlay.py:2281`). For each Person:
    - Radar points are transformed to the car frame, gated at y ≤ 5 m, projected into the image and kept if they fall inside the Person's mask (`weapon_detector.py:736`).
-   - A GMM clutter filter runs, plus a 0.5–3 m median range gate.
+   - A GMM clutter filter runs, plus a 0.5–3 m median range gate (`models/config.py:10-11`).
+     - A Person outside the gate gets **no Suspect Regions** (`models/realtime.py:456,770`).
+     - Line 770 appears to let `"out_of_fov"` through to classification. The status actually carries a suffix (`"out_of_fov: median_y=…"`), so that exact-match check never succeeds.
+     - The classifier's training data is cleaned to the same range (`models/pipeline/clean.py`).
    - Sliding windows run over the torso.
    - XGBoost gives P(weapon) per window, followed by hard NMS (IoU 0.1, gate **0.85**; `models/config.py:107-108`).
    - A per-Person height tracker assigns region track IDs.
