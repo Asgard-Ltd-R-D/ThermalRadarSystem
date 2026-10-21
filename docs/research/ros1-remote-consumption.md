@@ -2,7 +2,7 @@
 
 Question ([#3](https://github.com/Asgard-Ltd-R-D/ThermalRadarSystem/issues/3)): how can a Python process on a separate Linux host, or on macOS for development, consume pulse72's ROS1 Noetic topics, including the custom `arbe_msgs`?
 
-Background: [pulse72 investigation](https://github.com/Asgard-Ltd-R-D/ThermalRadarSystem/blob/docs/radar-findings/docs/research/pulse72-radar-system.md). Paths written as `pulse72:realtime/...` are relative to `~/Documents/DeviceDetection` on pulse72. Paths written as `arbe_dev:/...` are inside the `arbe_dev` container. Everything on pulse72 was read-only. The Radar System was not running during this investigation, so nothing was observed live.
+Background: [pulse72 investigation](pulse72-radar-system.md). Paths written as `pulse72:realtime/...` are relative to `~/Documents/DeviceDetection` on pulse72. Paths written as `arbe_dev:/...` are inside the `arbe_dev` container. Everything on pulse72 was read-only. The Radar System was not running during this investigation, so nothing was observed live.
 
 ## Answer
 

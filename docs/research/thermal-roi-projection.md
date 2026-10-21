@@ -119,7 +119,7 @@ The Thermal Verifier also needs a "not visible" outcome. At 0.5 m a 25° lens se
 
 ## Sources
 
-- [P72]: [pulse72 investigation](https://github.com/Asgard-Ltd-R-D/ThermalRadarSystem/blob/docs/radar-findings/docs/research/pulse72-radar-system.md), and pulse72 `~/Documents/DeviceDetection` @ `9cc5288`, read-only; file:line references are cited inline.
+- [P72]: [pulse72 investigation](pulse72-radar-system.md), and pulse72 `~/Documents/DeviceDetection` @ `9cc5288`, read-only; file:line references are cited inline.
 - [CV]: OpenCV 4.11.0, [`modules/calib3d/include/opencv2/calib3d.hpp`](https://github.com/opencv/opencv/blob/4.11.0/modules/calib3d/include/opencv2/calib3d.hpp). This is the source of the [fisheye](https://docs.opencv.org/4.11.0/db/d58/group__calib3d__fisheye.html) and [calib3d](https://docs.opencv.org/4.11.0/d9/d0c/group__calib3d.html) docs. Line numbers are cited inline.
 - [CV5]: OpenCV 5.x, [`modules/calib/include/opencv2/calib.hpp`](https://github.com/opencv/opencv/blob/5.x/modules/calib/include/opencv2/calib.hpp), `calibrateMultiview`.
 - [ELS]: ElSheikh et al., "Infrared Camera Geometric Calibration: A Review and a Precise Thermal Radiation Checkerboard Target", *Sensors* 23(7):3479, 2023. <https://pmc.ncbi.nlm.nih.gov/articles/PMC10099184/>
