@@ -24,6 +24,14 @@ _Avoid_: weapon detection, ROI, radar detection
 The thermal model's judgement of whether a given Suspect Region shows an Anomaly in the thermal image.
 _Avoid_: thermal detection (the thermal side never detects on its own)
 
+**Verification Zone**:
+The range band where Thermal Verification can see a Suspect Region: about 1.5–3 m from the system, near the centre line of the path.
+_Avoid_: thermal coverage, thermal FOV
+
+**Verdict**:
+Fusion's conclusion about one Suspect Region: Confirmed (Thermal Verification agrees), Cleared (it disagrees) or Unverified (it never got enough usable looks).
+_Avoid_: decision, result, rejected, unconfirmed
+
 **Alert**:
 A notification to a human operator that a Person may carry an Anomaly; the system takes no other action.
 _Avoid_: alarm (the Radar System's own word for a long-lived Suspect Region)
