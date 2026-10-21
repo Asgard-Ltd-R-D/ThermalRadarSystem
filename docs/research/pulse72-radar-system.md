@@ -88,11 +88,12 @@ Gathered over SSH without changing anything on pulse72. Paths are relative to `~
 
 | Location | Bags | Size | Total duration | Labels (bags) |
 |---|---|---|---|---|
-| `~/Documents/recordings_11_05` | 104 | 10.2 GB | 14.1 min | pistol 48, ied 31, none 24 |
-| `~/Documents/recordings_14_05` | 158 | 10.8 GB | 15.2 min | pistol 112, none 44 |
-| `~/Documents/recordings_27_05` | 91 | 9.5 GB | 14.0 min | pistol 59, ied 24, none 2 |
+| `~/Documents/recordings_11_05` | 104 | 10.2 GB | 14.1 min | pistol 48, ied 31, none 24, no sidecar 1 (`calib.bag`) |
+| `~/Documents/recordings_14_05` | 158 | 10.8 GB | 15.2 min | pistol 112, none 44, no sidecar 2 (`recording_*.bag`) |
+| `~/Documents/recordings_27_05` | 91 | 9.5 GB | 14.0 min | pistol 59, ied 24, none 2, no sidecar 6 (`recording_*.bag`) |
 
 - Every bag holds `/arbe/parsed/pointcloud_float/{0,1,2}` and `/recording/image/compressed`, 5–18 s each. **The bags contain no detections.**
-- Each bag has a `.csv` sidecar with `initials, weapon, visibility, direction, clothing`.
+- Each bag except the "no sidecar" ones has a `.csv` sidecar with `initials, weapon, visibility, direction, clothing`. The label counts above come from the sidecars' `weapon` column.
+- `recordings_11_05/metadata.csv` indexes 101 of its bags and disagrees with the sidecars on 14 of them: 10 `axon` bags are `toy_pistol` there but `pistol` in the sidecar, 2 `_none_` bags are `ied` there, and the 2 `_MP` bags are `pistol+ied` with two people there but `pistol` in the sidecar.
 - Per-frame weapon boxes are in `realtime/csv_cleaned/<record>/bbox_<ts>.csv`.
 - `realtime/{14_05,27_05,jun29}` are extracted CSV/PNG, not bags. No `jun29` bags exist.
